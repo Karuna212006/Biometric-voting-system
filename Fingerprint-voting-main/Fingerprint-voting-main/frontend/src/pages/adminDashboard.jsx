@@ -8,6 +8,8 @@ import adminImg from './../assets/manager.png';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable'; 
 
+const REFRESH_INTERVAL = 10; // seconds
+
 const AdminDashboard = () => {
   const [voters, setVoters] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,9 +21,26 @@ const AdminDashboard = () => {
   });
   const [error, setError] = useState(null);
   const [exportLoading, setExportLoading] = useState(false);
+  const [lastRefreshed, setLastRefreshed] = useState(null);
+  const [countdown, setCountdown] = useState(REFRESH_INTERVAL);
 
   useEffect(() => {
     fetchVoters();
+
+    // Auto-refresh every REFRESH_INTERVAL seconds
+    const refreshTimer = setInterval(() => {
+      fetchVoters();
+    }, REFRESH_INTERVAL * 1000);
+
+    // Countdown ticker
+    const countdownTimer = setInterval(() => {
+      setCountdown(prev => (prev <= 1 ? REFRESH_INTERVAL : prev - 1));
+    }, 1000);
+
+    return () => {
+      clearInterval(refreshTimer);
+      clearInterval(countdownTimer);
+    };
   }, []);
 
   const fetchVoters = async () => {
@@ -52,6 +71,8 @@ const AdminDashboard = () => {
         votersAge26Plus: olderVoters
       });
       
+      setLastRefreshed(new Date());
+      setCountdown(REFRESH_INTERVAL);
       setLoading(false);
     } catch (error) {
       console.error("Error fetching voters:", error);
@@ -280,16 +301,23 @@ const AdminDashboard = () => {
           {/* Voters Table */}
           <div className="bg-white rounded-xl shadow-md overflow-hidden">
             <div className="p-6 border-b border-gray-200">
-              <div className="flex justify-between items-center">
-                <h3 className="text-xl font-semibold text-gray-800">Registered Voters</h3>
+              <div className="flex justify-between items-center flex-wrap gap-2">
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-800">Registered Voters</h3>
+                  {lastRefreshed && (
+                    <p className="text-xs text-gray-400 mt-1">
+                      Last refreshed: {lastRefreshed.toLocaleTimeString()} &nbsp;·&nbsp; Next refresh in <span className="font-semibold text-blue-500">{countdown}s</span>
+                    </p>
+                  )}
+                </div>
                 <button 
-                  onClick={fetchVoters}
+                  onClick={() => { fetchVoters(); setCountdown(REFRESH_INTERVAL); }}
                   className="bg-blue-100 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-200 transition flex items-center"
                 >
                   <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                   </svg>
-                  Refresh
+                  Refresh Now
                 </button>
               </div>
             </div>

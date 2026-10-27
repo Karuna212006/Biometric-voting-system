@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { account } from '../appwriteConfig';
 import Navbar from './components/navbar';
 import HomePage from './pages/home';
 import RegisterPage from './pages/register';
@@ -14,37 +13,28 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const checkAuthStatus = async () => {
-    try {
-      const session = await account.get();
-      if (session) {
-        setIsAuthenticated(true);
-      } else {
-        setIsAuthenticated(false);
-      }
-    } catch (error) {
-      console.error('Not authenticated', error);
-      setIsAuthenticated(false);
-    } finally {
-      setLoading(false);
-    }
+  const checkAuthStatus = () => {
+    const auth = localStorage.getItem('isAdminAuthenticated');
+    setIsAuthenticated(auth === 'true');
+    setLoading(false);
   };
 
   useEffect(() => {
     checkAuthStatus();
-    
+
     const handleAuthChange = () => {
       checkAuthStatus();
     };
-    
+
     window.addEventListener('auth-state-changed', handleAuthChange);
-    
+
     return () => {
       window.removeEventListener('auth-state-changed', handleAuthChange);
     };
   }, []);
 
   const updateAuthState = (value) => {
+    localStorage.setItem('isAdminAuthenticated', value ? 'true' : 'false');
     setIsAuthenticated(value);
     window.dispatchEvent(new Event('auth-state-changed'));
   };

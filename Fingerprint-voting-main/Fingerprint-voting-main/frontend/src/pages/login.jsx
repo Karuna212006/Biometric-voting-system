@@ -1,11 +1,14 @@
 import { useState } from "react";
-import { account } from "./../../appwriteConfig";
 import { useNavigate, Link } from "react-router-dom";
+
+// Local admin credentials — change these as needed
+const ADMIN_EMAIL = "admin@gmail.com";
+const ADMIN_PASSWORD = "admin123";
 
 const LoginPage = ({ setIsAuthenticated }) => {
   const navigate = useNavigate();
   const [user, setUser] = useState({
-    email: "admin@gmail.com",
+    email: ADMIN_EMAIL,
     password: "",
   });
   const [error, setError] = useState("");
@@ -16,28 +19,16 @@ const LoginPage = ({ setIsAuthenticated }) => {
     setIsLoading(true);
     setError("");
 
-    try {
-      const session = await account.createEmailPasswordSession(
-        user.email,
-        user.password
-      );
-      
-      // Get account details
-      const accountDetails = await account.get();
-      console.log("Login successful", accountDetails);
-      
-      // Update authentication state
+    // Simple local password check
+    if (user.password === ADMIN_PASSWORD) {
+      console.log("Login successful");
       setIsAuthenticated(true);
-      
       navigate("/admin-dashboard");
-    } catch (error) {
-      console.error("Login failed", error);
-      setError(
-        error.message || "Login failed. Please check your credentials and try again."
-      );
-    } finally {
-      setIsLoading(false);
+    } else {
+      setError("Incorrect password. Please try again.");
     }
+
+    setIsLoading(false);
   };
 
   const handleChange = (e) => {
